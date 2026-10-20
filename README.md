@@ -1,15 +1,15 @@
-# COMPASS
+# TRACE
 
-**COMPASS (Context-aware Multimodal Platform for Adaptive Screening and Selection)** is an AI platform for generalizable prediction of nanomaterial-protein interactions (NPIs) and virtual screening of plasma protein nano-enrichment schemes.
+**TRACE** is an AI platform for generalizable prediction of nanomaterial-protein interactions (NPIs) and virtual screening of plasma protein nano-enrichment schemes.
 
-COMPASS learns from 1.97 million literature-curated interaction records by integrating:
+TRACE learns from 1.97 million literature-curated interaction records by integrating:
 
 - protein sequence representations derived from ESM2,
 - protein structural representations derived from ESMFold,
 - a text-based representation of the experimental context,
 - sample-level quality weighting during model optimization.
 
-To improve generalization to previously unseen materials and proteins, COMPASS uses interaction data from heterogeneous biofluids to broaden the nanomaterial-protein interaction space encountered during training. These data are incorporated through a biologically ordered curriculum that progressively introduces increasingly shifted source domains before refinement on human plasma data.
+To improve generalization to previously unseen materials and proteins, TRACE uses interaction data from heterogeneous biofluids to broaden the nanomaterial-protein interaction space encountered during training. These data are incorporated through a biologically ordered curriculum that progressively introduces increasingly shifted source domains before refinement on human plasma data.
 
 This repository provides the supporting code for the associated research manuscript and is released for transparency, reproducibility, and research use.
 
@@ -18,7 +18,7 @@ This repository provides the supporting code for the associated research manuscr
 ## Repository structure
 
 ```
-COMPASS/
+TRACE/
 ├── data/
 ├── text_embedding/
 ├── protein_embedding/
@@ -76,7 +76,7 @@ Precomputing these representations avoids repeated inference during model traini
 
 ### `train_basic_10/`, `train_basic_30/`, `train_basic_50/`, `train_basic_75/`, `train_basic_100/`
 
-Original/standard data-split experiments with curriculum learning. These directories construct the biologically ordered curriculum from non-blood biofluids, non-human blood-derived biofluids, human serum and low-quality human plasma, and human plasma, and train the COMPASS model.
+Original/standard data-split experiments with curriculum learning. These directories construct the biologically ordered curriculum from non-blood biofluids, non-human blood-derived biofluids, human serum and low-quality human plasma, and human plasma, and train the TRACE model.
 
 The numeric suffix indicates the fraction of the high-quality human-plasma training pool used in the final curriculum stage (Stage E): 10%, 30%, 50%, 75%, or 100%. This set of experiments tests how much typical human-plasma data is needed at the final refinement stage.
 
@@ -117,11 +117,11 @@ Contains adaptation experiments for unseen materials and proteins.
 - `train_nano/`: all gold-nanoparticle measurements are excluded during pretraining and introduced only during adaptation.
 - `train_protein/`: a set of protein accessions is completely withheld from pretraining and introduced only during adaptation.
 
-For each target domain, the scripts split independent test and validation sets, train models with increasing fractions of the remaining target-domain data, and compare training from scratch with COMPASS adaptation, in which the pretrained representation and fusion modules are retained and only the prediction head is optimized.
+For each target domain, the scripts split independent test and validation sets, train models with increasing fractions of the remaining target-domain data, and compare training from scratch with TRACE adaptation, in which the pretrained representation and fusion modules are retained and only the prediction head is optimized.
 
 ### `adaption_screen/`
 
-Contains code for adapting COMPASS to laboratory-specific calibration data and for virtual screening of plasma nano-enrichment schemes.
+Contains code for adapting TRACE to laboratory-specific calibration data and for virtual screening of plasma nano-enrichment schemes.
 
 - `data/`: shared input data such as protein sequence embeddings, protein structural embeddings, experimental-context embeddings, and the quality-controlled dataset. See its README for the required files.
 - `ft/`: fine-tuning/adaptation pipeline (`t1_unseen_ft.py` through `t6_compare_pred_exp.py`) for adapting the pretrained model and comparing predictions with experimental measurements.
@@ -139,6 +139,7 @@ Top-level batch scripts that iterate over selected experiment folders and run th
 
 ## Notes
 
+- This repository was previously released under the name COMPASS. The code and experimental setup are unchanged by the rename.
 - This repository is intended for research and academic use.
 - Commercial use of the software is strictly prohibited.
 - The implementation reflects the experimental setup described in the manuscript and may be further refined or reorganized after peer review.

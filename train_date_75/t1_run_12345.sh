@@ -4,7 +4,7 @@ CONDA_BASE=$(conda info --base)
 source "$CONDA_BASE/etc/profile.d/conda.sh"
 conda activate vllm-env
 
-cd /path/to/your/compass/train_date_75
+cd /path/to/your/trace/train_date_75
 
 export CUDA_VISIBLE_DEVICES="3"
 

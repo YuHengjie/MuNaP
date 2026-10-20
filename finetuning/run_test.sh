@@ -5,7 +5,7 @@ source "$CONDA_BASE/etc/profile.d/conda.sh"
 conda activate vllm-env
 
 # 假设您要进入的基础目录
-BASE_DIR="/path/to/your/compass/finetuning"
+BASE_DIR="/path/to/your/trace/finetuning"
 
 
 SUBDIRS=("train_nano" "train_protein" ) 
