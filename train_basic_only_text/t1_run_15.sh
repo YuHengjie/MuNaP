@@ -4,7 +4,7 @@ CONDA_BASE=$(conda info --base)
 source "$CONDA_BASE/etc/profile.d/conda.sh"
 conda activate vllm-env
 
-cd /path/to/your/trace/train_basic_only_text
+cd /path/to/your/munap/train_basic_only_text
 
 export CUDA_VISIBLE_DEVICES="0"
 

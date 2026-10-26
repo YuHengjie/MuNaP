@@ -5,7 +5,7 @@ source "$CONDA_BASE/etc/profile.d/conda.sh"
 conda activate vllm-env
 
 # 基础目录
-BASE_DIR="/path/to/your/trace"
+BASE_DIR="/path/to/your/munap"
 # 依次执行的子文件夹列表
 #SUBDIRS=("train_basic" "train_basic_with_fill" "train_basic_only_protein" "train_basic_only_text" "train_date" "train_date_with_fill" "train_nano" "train_nano_with_fill" "train_protein" "train_protein_with_fill") 
 #SUBDIRS=("train_basic_10" "train_basic_30" "train_basic_50" "train_basic_75" "train_basic_100") 
