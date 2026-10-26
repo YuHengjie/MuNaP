@@ -1,6 +1,6 @@
 # MuNaP
 
-**MuNaP** (**Mu**ltimodel foundation model for **Na**nomaterial-**P**rotein interaction) is an AI platform for generalizable prediction of nanomaterial-protein interactions (NPIs) and virtual screening of plasma protein nano-enrichment schemes.
+**MuNaP** (**Mu**ltimodal foundation model for **Na**nomaterial-**P**rotein interaction) is an AI platform for generalizable prediction of nanomaterial-protein interactions (NPIs) and virtual screening of plasma protein nano-enrichment schemes.
 
 MuNaP learns from 1.97 million literature-curated interaction records by integrating:
 
@@ -13,9 +13,11 @@ To improve generalization to previously unseen materials and proteins, MuNaP use
 
 This repository provides the supporting code for the associated research manuscript and is released for transparency, reproducibility, and research use.
 
-## Model parameters
+## Model
 
-The complete feature-extraction and fusion system comprises approximately **13.49B parameters**:
+MuNaP is a **13.5B-parameter multimodal foundation model** that integrates protein sequence and structure representations with text-encoded experimental conditions to predict nanomaterial-protein interactions and prioritize nanomaterials for plasma protein enrichment. The exact parameter count is **13,489,546,853** (approximately 13.5B).
+
+### Parameter breakdown
 
 | Module | Base model | Output dimension | Parameters |
 | --- | --- | ---: | ---: |
@@ -27,7 +29,7 @@ The complete feature-extraction and fusion system comprises approximately **13.4
 
 ESMFold internally uses `esm2_3B` as its language-model backbone. The ESM2 sequence encoder and ESMFold are two independently loaded, frozen checkpoints, so their parameters are counted separately.
 
-### Fusion-head breakdown
+#### Fusion-head breakdown
 
 | Component | Structure | Parameters |
 | --- | --- | ---: |
@@ -42,15 +44,19 @@ ESMFold internally uses `esm2_3B` as its language-model backbone. The ESM2 seque
 
 The value `14,855,557`, sometimes obtained by summing all tensors in the fusion-head `state_dict`, includes **8,196 BatchNorm buffers** (running mean, running variance, and `num_batches_tracked`). It is not the number of model parameters.
 
-### Adaptation and inference
+### Modular encoding and inference
 
-`adaption_screen/ft/t1_unseen_ft.py` does not load the text, ESM2, or ESMFold encoders. Instead, it loads precomputed embeddings:
+Running the full 13.5B-parameter model end-to-end for every candidate combination is computationally expensive and impractical on a personal computer. MuNaP therefore uses a modular pipeline:
 
-- text: `text_embeddings.npy`, 4096 dimensions;
-- protein sequence: `protein_embeddings.pkl`, 2560 dimensions;
-- protein structure: `esmfold_protein_embeddings.pkl`, 384 dimensions.
+1. **Offline modality encoding.** Protein sequences, protein structures, and structured experimental text are encoded independently by their respective modules and cached:
+   - text: `text_embeddings.npy`, 4096 dimensions;
+   - protein sequence: `protein_embeddings.pkl`, 2560 dimensions;
+   - protein structure: `esmfold_protein_embeddings.pkl`, 384 dimensions.
+2. **Lightweight multimodal inference.** The cached embeddings are combined and passed to `CrossAttentionClassifierGated` for prediction, adaptation, and virtual screening.
 
-Therefore, the model instantiated for laboratory-specific adaptation and inference contains **14,847,361 parameters**. During adaptation, only the **280,961-parameter classifier head** is trainable; the remaining **14,566,400** fusion parameters are frozen. The full 13.49B-parameter system is used only for offline feature extraction.
+This design avoids repeatedly re-encoding the same structured text and protein modalities for every pairwise combination. Only the 14,847,361-parameter fusion module is instantiated for downstream inference; the three base encoders are not loaded. As a result, inference and laboratory-specific adaptation can run on a personal computer, and the overall workflow is substantially faster.
+
+During laboratory-specific adaptation in `adaption_screen/ft/t1_unseen_ft.py`, only the **280,961-parameter classifier head** is trainable; the remaining **14,566,400** fusion parameters are frozen.
 
 ---
 
