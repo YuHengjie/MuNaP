@@ -13,6 +13,45 @@ To improve generalization to previously unseen materials and proteins, MuNaP use
 
 This repository provides the supporting code for the associated research manuscript and is released for transparency, reproducibility, and research use.
 
+## Model parameters
+
+The complete feature-extraction and fusion system comprises approximately **13.49B parameters**:
+
+| Module | Base model | Output dimension | Parameters |
+| --- | --- | ---: | ---: |
+| Text encoder | Linq-Embed-Mistral (Mistral-7B) | 4096 | **7,110,660,096** |
+| Protein sequence encoder | ESM2 `esm2_t36_3B_UR50D` | 2560 | **2,839,000,481** |
+| Protein structure encoder | ESMFold `esmfold_v1` | 384 | **3,525,038,915** |
+| Multimodal fusion and classifier | `CrossAttentionClassifierGated` | 1024 | **14,847,361** |
+| **Total** | | | **13,489,546,853** |
+
+ESMFold internally uses `esm2_3B` as its language-model backbone. The ESM2 sequence encoder and ESMFold are two independently loaded, frozen checkpoints, so their parameters are counted separately.
+
+### Fusion-head breakdown
+
+| Component | Structure | Parameters |
+| --- | --- | ---: |
+| Text projection | 4096 -> 1024 + BatchNorm | 4,197,376 |
+| Protein sequence projection | 2560 -> 1024 + BatchNorm | 2,624,512 |
+| Protein structure projection | 384 -> 1024 + BatchNorm | 396,288 |
+| Gated fusion | 2048 -> 1024 -> 1024 | 3,147,776 |
+| Post-fusion BatchNorm | 1024 dimensions | 2,048 |
+| Cross-attention | 1024 dimensions, 8 heads | 4,198,400 |
+| Classifier | 1024 -> 256 -> 64 -> 1 | 280,961 |
+| **Total** | | **14,847,361** |
+
+The value `14,855,557`, sometimes obtained by summing all tensors in the fusion-head `state_dict`, includes **8,196 BatchNorm buffers** (running mean, running variance, and `num_batches_tracked`). It is not the number of model parameters.
+
+### Adaptation and inference
+
+`adaption_screen/ft/t1_unseen_ft.py` does not load the text, ESM2, or ESMFold encoders. Instead, it loads precomputed embeddings:
+
+- text: `text_embeddings.npy`, 4096 dimensions;
+- protein sequence: `protein_embeddings.pkl`, 2560 dimensions;
+- protein structure: `esmfold_protein_embeddings.pkl`, 384 dimensions.
+
+Therefore, the model instantiated for laboratory-specific adaptation and inference contains **14,847,361 parameters**. During adaptation, only the **280,961-parameter classifier head** is trainable; the remaining **14,566,400** fusion parameters are frozen. The full 13.49B-parameter system is used only for offline feature extraction.
+
 ---
 
 ## Repository structure
