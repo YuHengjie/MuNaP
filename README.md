@@ -1,6 +1,6 @@
 # MuNaP
 
-**MuNaP** (**Mu**ltimodal foundation model for **Na**nomaterial-**P**rotein interaction) is an AI platform for generalizable prediction of nanomaterial-protein interactions (NPIs) and virtual screening of plasma protein nano-enrichment schemes.
+**MuNaP** (**Mu**ltimodal foundation model for **Na**nomaterial-**P**rotein interaction) is a multimodal foundation model integrating protein sequence and structural representations with text-encoded experimental conditions for generalizable prediction of nanomaterial-protein interactions (NPIs) and automated selection of nanomaterials for plasma protein enrichment. It supports virtual screening and prioritization of plasma protein nano-enrichment schemes, with generalization to unseen proteins, nanomaterials and experimental conditions.
 
 MuNaP learns from 1.97 million literature-curated interaction records by integrating:
 
@@ -15,7 +15,7 @@ This repository provides the supporting code for the associated research manuscr
 
 ## Model
 
-MuNaP is a **13.5B-parameter multimodal foundation model** that integrates protein sequence and structure representations with text-encoded experimental conditions to predict nanomaterial-protein interactions and prioritize nanomaterials for plasma protein enrichment. The exact parameter count is **13,489,546,853** (approximately 13.5B).
+MuNaP is a **13.5B-parameter multimodal foundation model** that integrates protein sequence and structure representations with text-encoded experimental conditions to enable generalizable prediction of nanomaterial-protein interactions (NPIs) and automated selection of nanomaterials for plasma protein enrichment. The exact parameter count is **13,489,546,853** (approximately 13.5B).
 
 ### Parameter breakdown
 
