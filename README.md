@@ -171,7 +171,7 @@ For each target domain, the scripts split independent test and validation sets, 
 
 Contains the post-preprocessing workflow for laboratory-specific MuNaP adaptation and virtual screening of plasma nano-enrichment schemes.
 
-- `data/`: prepared protein embeddings, experimental-context embeddings, pretrained checkpoint, full protein-scheme dataset, and QC dataset. Dataset preparation and embedding-generation code are intentionally not included.
+- `data/`: prepared protein embeddings, experimental-context embeddings, pretrained checkpoint, separate four-scheme calibration and 36-scheme candidate raw datasets, and the QC dataset used for experimental comparison. Dataset preparation and embedding-generation code are intentionally not included.
 - `model.py`: MuNaP fusion model and classifier-head-only adaptation utility.
 - `common.py`: prepared-data loaders, scheme-balanced sampling, and inference helpers.
 - `train.py`: five-fold-compatible fine-tuning with protein-level BCE, scheme coverage loss, and pairwise scheme-ranking loss.

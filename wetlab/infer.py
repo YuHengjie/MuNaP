@@ -25,7 +25,8 @@ from common import (
     SchemeProteinDataset,
     build_model,
     load_embeddings,
-    load_full_dataset,
+    load_qc_dataset,
+    load_raw_dataset,
     parse_targets,
     predict_loader,
     scheme_coverage_map,
@@ -39,7 +40,7 @@ def parse_args():
         description="Infer and evaluate a scheme-ranking fine-tuned model"
     )
     parser.add_argument("--data-dir", type=Path, default=DATA_DIR)
-    parser.add_argument("--dataset", type=Path)
+    parser.add_argument("--candidate-dataset", type=Path)
     parser.add_argument("--dataset-qc", type=Path)
     parser.add_argument(
         "--targets",
@@ -97,7 +98,10 @@ def main():
     set_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     input_data_dir = args.data_dir.resolve()
-    dataset_path = (args.dataset or input_data_dir / "full_dataset.csv").resolve()
+    candidate_dataset_path = (
+        args.candidate_dataset
+        or input_data_dir / "candidate_raw.csv"
+    ).resolve()
     dataset_qc_path = (
         args.dataset_qc or input_data_dir / "dataset_qc.csv"
     ).resolve()
@@ -125,15 +129,22 @@ def main():
     targets = parse_targets(args.targets)
     target_keys = {target_key(material, dose) for material, dose in targets}
 
-    full_df = load_full_dataset(dataset_path)
-    coverage = pd.Series(scheme_coverage_map(dataset_qc_path, full_df))
-    test_df = full_df[~full_df["sample"].isin(target_keys)].copy()
+    candidate_df = load_raw_dataset(candidate_dataset_path)
+    qc_df = load_qc_dataset(dataset_qc_path)
+    test_df = candidate_df
     test_samples = sorted(test_df["sample"].unique())
     if len(test_samples) != args.expected_test_schemes:
         raise ValueError(
             f"Expected {args.expected_test_schemes} test schemes, "
             f"found {len(test_samples)}"
         )
+    overlap = sorted(set(test_samples) & target_keys)
+    if overlap:
+        raise ValueError(
+            "candidate_raw.csv must not contain calibration schemes: "
+            f"{overlap}"
+        )
+    coverage = pd.Series(scheme_coverage_map(qc_df, test_df))
 
     text_embeddings, sequence_embeddings, structure_embeddings = load_embeddings(
         input_data_dir
@@ -158,28 +169,42 @@ def main():
         checkpoint,
         device,
     )
-    probabilities, labels, _, _ = predict_loader(model, test_loader, device)
+    probabilities, _, _, _ = predict_loader(model, test_loader, device)
     predictions = (probabilities >= threshold).astype(int)
 
     result_df = test_df[
-        ["ID", "dose", "Accession", "RPA", "x_index", "label", "sample"]
-    ].copy()
+        ["ID", "dose", "Accession", "RPA", "x_index", "sample"]
+    ].rename(columns={"RPA": "raw_RPA"})
     result_df["pred_prob"] = probabilities
     result_df["pred_label"] = predictions
+    qc_eval = qc_df[
+        ["sample", "Accession", "RPA", "label"]
+    ].rename(columns={"RPA": "qc_RPA", "label": "qc_label"})
+    result_df = result_df.merge(
+        qc_eval,
+        on=["sample", "Accession"],
+        how="left",
+        validate="one_to_one",
+    )
+    if result_df[["qc_RPA", "qc_label"]].isna().any().any():
+        raise ValueError(
+            "dataset_qc.csv does not cover every candidate scheme-protein pair"
+        )
+    qc_labels = result_df["qc_label"].to_numpy(dtype=np.int32)
     result_df.to_csv(results_dir / "infer_test.csv", index=False)
 
     pair_metrics = {
-        "test_AUROC": float(roc_auc_score(labels, probabilities)),
-        "test_AUPRC": float(average_precision_score(labels, probabilities)),
-        "test_Accuracy": float(accuracy_score(labels, predictions)),
+        "test_AUROC": float(roc_auc_score(qc_labels, probabilities)),
+        "test_AUPRC": float(average_precision_score(qc_labels, probabilities)),
+        "test_Accuracy": float(accuracy_score(qc_labels, predictions)),
         "test_Precision": float(
-            precision_score(labels, predictions, zero_division=0)
+            precision_score(qc_labels, predictions, zero_division=0)
         ),
         "test_Recall": float(
-            recall_score(labels, predictions, zero_division=0)
+            recall_score(qc_labels, predictions, zero_division=0)
         ),
-        "test_F1": float(f1_score(labels, predictions, zero_division=0)),
-        "test_MCC": float(matthews_corrcoef(labels, predictions)),
+        "test_F1": float(f1_score(qc_labels, predictions, zero_division=0)),
+        "test_MCC": float(matthews_corrcoef(qc_labels, predictions)),
         "threshold": threshold,
         "best_epoch": selected_epoch,
         "best_validation_selection_score": float(
@@ -193,7 +218,7 @@ def main():
         fraction_above_threshold=("pred_label", "mean"),
         detected_proteins=("pred_label", "sum"),
         total_proteins=("pred_label", "size"),
-        observed_coverage=("label", "mean"),
+        observed_coverage=("qc_label", "mean"),
     )
     for fixed_threshold in [0.3, 0.4, 0.5, 0.6, 0.7]:
         column = f"fraction_above_{fixed_threshold:.1f}"
@@ -262,7 +287,7 @@ def main():
                 "pair_metrics": pair_metrics,
                 "scheme_metrics": metrics_df.to_dict(orient="records"),
                 "test_schemes": test_samples,
-                "dataset": str(dataset_path),
+                "candidate_dataset": str(candidate_dataset_path),
                 "dataset_qc": str(dataset_qc_path),
             },
             indent=2,

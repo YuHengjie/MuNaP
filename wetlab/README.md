@@ -28,7 +28,8 @@ described in [`data/README.md`](data/README.md) must already be prepared.
 Place the following files in `wetlab/data/`:
 
 ```text
-full_dataset.csv
+calibration_raw.csv
+candidate_raw.csv
 dataset_qc.csv
 protein_embeddings.pkl
 esmfold_protein_embeddings.pkl
@@ -44,6 +45,7 @@ formats.
 ```bash
 python wetlab/train.py \
   --data-dir wetlab/data \
+  --calibration-dataset wetlab/data/calibration_raw.csv \
   --targets NP10:0.6,NP2:0.6,NP4:0.6,NP8:1.0 \
   --loss-mode coverage_rank \
   --cv-folds 5 \
@@ -58,6 +60,8 @@ python wetlab/train.py \
 ```bash
 python wetlab/infer.py \
   --data-dir wetlab/data \
+  --candidate-dataset wetlab/data/candidate_raw.csv \
+  --dataset-qc wetlab/data/dataset_qc.csv \
   --targets NP10:0.6,NP2:0.6,NP4:0.6,NP8:1.0 \
   --run-dir wetlab/runs/fold0
 ```
@@ -72,6 +76,10 @@ bash wetlab/run_fivefold.sh
 
 The output directory contains one folder per fold and
 `final_rank_ensemble/`.
+
+The four-scheme raw file is used only for fine-tuning. The 36-scheme raw file
+defines the candidate scheme-protein pairs to score. Experimental labels and
+scheme coverage for the 36 candidates are read only from `dataset_qc.csv`.
 
 ## Final aggregation
 

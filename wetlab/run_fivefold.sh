@@ -4,7 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PY="${PY:-python}"
 DATA_DIR="${DATA_DIR:-${SCRIPT_DIR}/data}"
-DATASET="${DATASET:-${DATA_DIR}/full_dataset.csv}"
+CALIBRATION_DATASET="${CALIBRATION_DATASET:-${DATA_DIR}/calibration_raw.csv}"
+CANDIDATE_DATASET="${CANDIDATE_DATASET:-${DATA_DIR}/candidate_raw.csv}"
 DATASET_QC="${DATASET_QC:-${DATA_DIR}/dataset_qc.csv}"
 PRETRAINED="${PRETRAINED:-${DATA_DIR}/pretrained_model.pt}"
 TARGETS="${TARGETS:-NP10:0.6,NP2:0.6,NP4:0.6,NP8:1.0}"
@@ -29,8 +30,7 @@ run_fold() {
     mkdir -p "${run_dir}"
     CUDA_VISIBLE_DEVICES="${gpu}" "${PY}" "${SCRIPT_DIR}/train.py" \
         --data-dir "${DATA_DIR}" \
-        --dataset "${DATASET}" \
-        --dataset-qc "${DATASET_QC}" \
+        --calibration-dataset "${CALIBRATION_DATASET}" \
         --pretrained "${PRETRAINED}" \
         --targets "${TARGETS}" \
         --loss-mode coverage_rank \
@@ -46,7 +46,7 @@ run_fold() {
 
     CUDA_VISIBLE_DEVICES="${gpu}" "${PY}" "${SCRIPT_DIR}/infer.py" \
         --data-dir "${DATA_DIR}" \
-        --dataset "${DATASET}" \
+        --candidate-dataset "${CANDIDATE_DATASET}" \
         --dataset-qc "${DATASET_QC}" \
         --targets "${TARGETS}" \
         --run-dir "${run_dir}" \
@@ -55,8 +55,9 @@ run_fold() {
 
 echo "Five-fold rank-only run started at $(date '+%F %T')"
 echo "Data directory: ${DATA_DIR}"
-echo "Prepared dataset: ${DATASET}"
-echo "Prepared QC dataset: ${DATASET_QC}"
+echo "Calibration raw dataset: ${CALIBRATION_DATASET}"
+echo "Candidate raw dataset: ${CANDIDATE_DATASET}"
+echo "QC comparison dataset: ${DATASET_QC}"
 echo "Pretrained checkpoint: ${PRETRAINED}"
 echo "Run root: ${RUN_ROOT}"
 echo "Model seed: ${SEED}; split seed: ${SPLIT_SEED}"

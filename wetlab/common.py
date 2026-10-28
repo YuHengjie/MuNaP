@@ -43,7 +43,7 @@ def target_key(material: str, dose: float) -> str:
     return f"{material}_{dose_key(dose)}"
 
 
-def load_full_dataset(path: Path) -> pd.DataFrame:
+def load_raw_dataset(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
     df["dose"] = pd.to_numeric(df["dose"], errors="raise")
     df["RPA"] = pd.to_numeric(df["RPA"], errors="raise")
@@ -64,22 +64,41 @@ def load_full_dataset(path: Path) -> pd.DataFrame:
     return df
 
 
-def scheme_coverage_map(qc_path: Path, df: pd.DataFrame) -> dict[str, float]:
-    # Keep per-protein labels from the prepared training dataset, while using
-    # the independently prepared QC dataset for scheme-level coverage targets.
-    qc = pd.read_csv(qc_path)
+def load_qc_dataset(path: Path) -> pd.DataFrame:
+    qc = pd.read_csv(path)
     qc["dose"] = pd.to_numeric(qc["dose"], errors="raise")
     qc["RPA"] = pd.to_numeric(qc["RPA"], errors="raise")
     qc["sample"] = (
         qc["ID"].astype(str) + "_" + qc["dose"].map(dose_key)
     )
     qc = qc.drop_duplicates(["sample", "Accession"])
-    coverage = qc.assign(label=(qc["RPA"] > 1e-6).astype(float)).groupby(
-        "sample"
-    )["label"].mean()
-    missing = sorted(set(df["sample"].unique()) - set(coverage.index))
-    if missing:
-        raise ValueError(f"Coverage missing for schemes: {missing}")
+    qc["label"] = (qc["RPA"] > 1e-6).astype(np.float32)
+    return qc.reset_index(drop=True)
+
+
+def scheme_coverage_map(
+    qc: pd.DataFrame, df: pd.DataFrame
+) -> dict[str, float]:
+    required_pairs = df[["sample", "Accession"]].drop_duplicates()
+    paired = required_pairs.merge(
+        qc[["sample", "Accession", "label"]],
+        on=["sample", "Accession"],
+        how="left",
+        validate="one_to_one",
+    )
+    missing = paired["label"].isna()
+    if missing.any():
+        examples = paired.loc[missing, ["sample", "Accession"]].head(10)
+        raise ValueError(
+            "QC data are missing candidate scheme-protein pairs: "
+            f"{examples.to_dict(orient='records')}"
+        )
+    coverage = paired.groupby("sample")["label"].mean()
+    return coverage.astype(float).to_dict()
+
+
+def raw_scheme_coverage(df: pd.DataFrame) -> dict[str, float]:
+    coverage = df.groupby("sample")["label"].mean()
     return coverage.astype(float).to_dict()
 
 

@@ -19,11 +19,11 @@ from common import (
     SchemeProteinDataset,
     build_model,
     load_embeddings,
-    load_full_dataset,
+    load_raw_dataset,
     parse_targets,
     prepare_head_training,
     predict_loader,
-    scheme_coverage_map,
+    raw_scheme_coverage,
     set_seed,
     target_key,
 )
@@ -34,8 +34,7 @@ def parse_args():
         description="Head-only fine-tuning with scheme coverage and ranking losses"
     )
     parser.add_argument("--data-dir", type=Path, default=DATA_DIR)
-    parser.add_argument("--dataset", type=Path)
-    parser.add_argument("--dataset-qc", type=Path)
+    parser.add_argument("--calibration-dataset", type=Path)
     parser.add_argument(
         "--targets",
         default="NP10:0.6,NP2:0.6,NP4:0.6,NP8:1.0",
@@ -232,9 +231,9 @@ def main():
     torch.backends.cudnn.benchmark = True
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     input_data_dir = args.data_dir.resolve()
-    dataset_path = (args.dataset or input_data_dir / "full_dataset.csv").resolve()
-    dataset_qc_path = (
-        args.dataset_qc or input_data_dir / "dataset_qc.csv"
+    calibration_dataset_path = (
+        args.calibration_dataset
+        or input_data_dir / "calibration_raw.csv"
     ).resolve()
     pretrained_checkpoint = (
         args.pretrained or input_data_dir / "pretrained_model.pt"
@@ -250,16 +249,14 @@ def main():
     if len(set(target_keys)) != len(target_keys):
         raise ValueError("Duplicate target schemes")
 
-    full_df = load_full_dataset(dataset_path)
-    coverage_by_scheme = scheme_coverage_map(dataset_qc_path, full_df)
-    missing = [key for key in target_keys if key not in coverage_by_scheme]
-    if missing:
-        raise ValueError(f"Target schemes missing from dataset: {missing}")
-
-    fit_df = full_df[full_df["sample"].isin(target_keys)].copy()
+    fit_df = load_raw_dataset(calibration_dataset_path)
     observed = sorted(fit_df["sample"].unique())
     if set(observed) != set(target_keys):
-        raise ValueError(f"Observed target schemes {observed} != {target_keys}")
+        raise ValueError(
+            "calibration_raw.csv must contain exactly the target schemes "
+            f"{target_keys}; observed {observed}"
+        )
+    coverage_by_scheme = raw_scheme_coverage(fit_df)
 
     split_seed = args.seed if args.split_seed is None else args.split_seed
     if args.cv_folds > 1:
@@ -363,8 +360,7 @@ def main():
         "targets": args.targets,
         "target_keys": target_keys,
         "input_data_dir": str(input_data_dir),
-        "dataset": str(dataset_path),
-        "dataset_qc": str(dataset_qc_path),
+        "calibration_dataset": str(calibration_dataset_path),
         "pretrained_checkpoint": str(pretrained_checkpoint),
         "scheme_coverage": {
             sample: coverage_by_scheme[sample] for sample in target_keys
