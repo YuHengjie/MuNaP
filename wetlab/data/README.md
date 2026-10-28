@@ -13,9 +13,10 @@ The raw abundance data are split into two files:
 | `calibration_raw.csv` | 4 | raw protein abundance used for all fine-tuning losses |
 | `candidate_raw.csv` | 36 | raw protein abundance used to define screening pairs |
 
-`dataset_qc.csv` contains quality-controlled measurements and is used only for
-experimental comparison after prediction. It is not read during fine-tuning.
-All input files must use the same scheme and protein identifiers.
+`dataset_qc.csv` contains quality-controlled measurements for the 36 candidate
+schemes only and is used only for experimental comparison after prediction.
+It must not contain the four calibration schemes and is not read during
+fine-tuning. All input files must use the same scheme and protein identifiers.
 
 ## Raw abundance files
 
@@ -64,7 +65,8 @@ observations, 36 schemes, and 4,472 protein accessions.
 ## `dataset_qc.csv`
 
 Quality-controlled observations used only to evaluate the 36 predictions.
-Required columns:
+The file must contain exactly the 36 candidate schemes and no calibration
+schemes. Required columns:
 
 ```text
 ID
@@ -81,12 +83,12 @@ RPA
 - Scheme coverage is the fraction of candidate proteins with a QC-derived
   label of one.
 - Every candidate scheme-protein pair must be present.
+- Extra or missing schemes cause inference to stop with an error.
 - Extra columns such as `RPA_raw_mean`, `weight`, and `x_index` are currently
   ignored by the training and inference code.
 
-The reference QC file contains 178,880 rows covering all 40 schemes. The 36
-candidate schemes contribute 160,992 comparison rows; QC rows belonging to
-the four calibration schemes are not used for inference evaluation.
+The reference QC file contains 160,992 rows covering exactly 36 candidate
+schemes and 4,472 protein accessions.
 
 ## Embeddings
 

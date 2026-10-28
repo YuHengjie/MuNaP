@@ -80,6 +80,8 @@ The output directory contains one folder per fold and
 The four-scheme raw file is used only for fine-tuning. The 36-scheme raw file
 defines the candidate scheme-protein pairs to score. Experimental labels and
 scheme coverage for the 36 candidates are read only from `dataset_qc.csv`.
+The QC file must contain exactly those 36 candidate schemes; extra or missing
+schemes are rejected.
 
 ## Final aggregation
 

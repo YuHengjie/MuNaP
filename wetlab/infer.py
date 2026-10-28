@@ -144,6 +144,14 @@ def main():
             "candidate_raw.csv must not contain calibration schemes: "
             f"{overlap}"
         )
+    qc_samples = sorted(qc_df["sample"].unique())
+    if set(qc_samples) != set(test_samples):
+        extra = sorted(set(qc_samples) - set(test_samples))
+        missing = sorted(set(test_samples) - set(qc_samples))
+        raise ValueError(
+            "dataset_qc.csv must contain exactly the candidate schemes; "
+            f"extra={extra}, missing={missing}"
+        )
     coverage = pd.Series(scheme_coverage_map(qc_df, test_df))
 
     text_embeddings, sequence_embeddings, structure_embeddings = load_embeddings(
