@@ -56,7 +56,7 @@ Running the full 13.5B-parameter model end-to-end for every candidate combinatio
 
 This design avoids repeatedly re-encoding the same structured text and protein modalities for every pairwise combination. Only the 14,847,361-parameter fusion module is instantiated for downstream inference; the three base encoders are not loaded. As a result, inference and laboratory-specific adaptation can run on a personal computer, and the overall workflow is substantially faster.
 
-During laboratory-specific adaptation in `adaption_screen/ft/t1_unseen_ft.py`, only the **280,961-parameter classifier head** is trainable; the remaining **14,566,400** fusion parameters are frozen.
+During laboratory-specific adaptation in `adaption_screen/train.py`, only the **280,961-parameter classifier head** is trainable; the remaining **14,566,400** fusion parameters are frozen.
 
 ---
 
@@ -86,9 +86,12 @@ MuNaP/
 ├── finetuning/
 ├── adaption_screen/
 │   ├── data/
-│   ├── ft/
-│   │   └── data/
-│   └── pred/
+│   ├── model.py
+│   ├── common.py
+│   ├── train.py
+│   ├── infer.py
+│   ├── aggregate.py
+│   └── run_fivefold.sh
 ├── run_test.sh
 └── run_roc_pr.sh
 ```
@@ -166,12 +169,17 @@ For each target domain, the scripts split independent test and validation sets, 
 
 ### `adaption_screen/`
 
-Contains code for adapting MuNaP to laboratory-specific calibration data and for virtual screening of plasma nano-enrichment schemes.
+Contains the post-preprocessing workflow for laboratory-specific MuNaP adaptation and virtual screening of plasma nano-enrichment schemes.
 
-- `data/`: shared input data such as protein sequence embeddings, protein structural embeddings, experimental-context embeddings, and the quality-controlled dataset. See its README for the required files.
-- `ft/`: fine-tuning/adaptation pipeline (`t1_unseen_ft.py` through `t6_compare_pred_exp.py`) for adapting the pretrained model and comparing predictions with experimental measurements.
-  - `ft/data/`: stores `train.csv`, `val.csv`, and `test.csv`. `train` and `val` are derived from calibrated experimental data with an 8:2 split; `test` contains candidate nano-enrichment schemes.
-- `pred/`: direct prediction with the original/pretrained model (`t1_test.py`).
+- `data/`: prepared protein embeddings, experimental-context embeddings, pretrained checkpoint, full protein-scheme dataset, and QC dataset. Dataset preparation and embedding-generation code are intentionally not included.
+- `model.py`: MuNaP fusion model and classifier-head-only adaptation utility.
+- `common.py`: prepared-data loaders, scheme-balanced sampling, and inference helpers.
+- `train.py`: five-fold-compatible fine-tuning with protein-level BCE, scheme coverage loss, and pairwise scheme-ranking loss.
+- `infer.py`: fold-model inference and scheme-level ranking on held-out candidates.
+- `aggregate.py`: equal-weight aggregation of within-cohort scheme rank percentiles across fold models.
+- `run_fivefold.sh`: end-to-end five-fold training, inference, and rank aggregation.
+
+See `adaption_screen/README.md` and `adaption_screen/data/README.md` for the required prepared inputs and commands.
 
 ### `run_test.sh` and `run_roc_pr.sh`
 

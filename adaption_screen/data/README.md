@@ -1,10 +1,50 @@
-# adaption_screen/data
+# Prepared input files
 
-请将 `ft` 和 `pred` 脚本需要的以下数据文件放到本目录（`adaption_screen/data`）：
+The `adaption_screen` code starts after all dataset and embedding
+preprocessing has been completed. Do not place dataset-generation scripts
+here.
 
-- `protein_embeddings.pkl` - 蛋白序列表征（ESM2 embeddings）
-- `esmfold_protein_embeddings.pkl` - 蛋白结构表征（ESMFold embeddings）
-- `text_embeddings.npy` - 实验上下文文本表征
-- `dataset_qc.csv` - 质量控制后的原始数据集
+Required files:
 
-`ft` 和 `pred` 中的脚本会通过 `../data/...` 路径读取这些文件。
+## `full_dataset.csv`
+
+One row per protein-scheme measurement. Required columns:
+
+```text
+ID
+dose
+Accession
+RPA
+x_index
+```
+
+`x_index` must index the corresponding row in `text_embeddings.npy`.
+Replicate rows for the same `ID`, `dose`, and `Accession` are averaged before
+training.
+
+## `dataset_qc.csv`
+
+Quality-controlled experimental data used to calculate scheme coverage.
+Required columns:
+
+```text
+ID
+dose
+Accession
+RPA
+```
+
+## Embeddings
+
+- `protein_embeddings.pkl`: mapping from protein accession to the ESM2 vector.
+- `esmfold_protein_embeddings.pkl`: mapping from protein accession to the
+  ESMFold vector.
+- `text_embeddings.npy`: matrix of precomputed experimental-context vectors.
+
+## Pretrained model
+
+- `pretrained_model.pt`: a PyTorch state dictionary compatible with
+  `CrossAttentionClassifierGated` in `model.py`.
+
+The data files are not included in this repository and must be obtained or
+prepared separately.

@@ -1,0 +1,6 @@
+data/*
+!data/README.md
+!data/.gitignore
+runs/
+__pycache__/
+*.pyc
