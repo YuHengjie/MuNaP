@@ -25,7 +25,7 @@ described in [`data/README.md`](data/README.md) must already be prepared.
 
 ## Prepared inputs
 
-Place the following files in `adaption_screen/data/`:
+Place the following files in `wetlab/data/`:
 
 ```text
 full_dataset.csv
@@ -42,24 +42,24 @@ formats.
 ## Train one fold
 
 ```bash
-python adaption_screen/train.py \
-  --data-dir adaption_screen/data \
+python wetlab/train.py \
+  --data-dir wetlab/data \
   --targets NP10:0.6,NP2:0.6,NP4:0.6,NP8:1.0 \
   --loss-mode coverage_rank \
   --cv-folds 5 \
   --fold-index 0 \
   --seed 42 \
   --split-seed 42 \
-  --output-dir adaption_screen/runs/fold0
+  --output-dir wetlab/runs/fold0
 ```
 
 ## Infer one fold
 
 ```bash
-python adaption_screen/infer.py \
-  --data-dir adaption_screen/data \
+python wetlab/infer.py \
+  --data-dir wetlab/data \
   --targets NP10:0.6,NP2:0.6,NP4:0.6,NP8:1.0 \
-  --run-dir adaption_screen/runs/fold0
+  --run-dir wetlab/runs/fold0
 ```
 
 ## Run all five folds
@@ -67,7 +67,7 @@ python adaption_screen/infer.py \
 ```bash
 GPU_LIST="0 1 2 3 4" \
 TARGETS="NP10:0.6,NP2:0.6,NP4:0.6,NP8:1.0" \
-bash adaption_screen/run_fivefold.sh
+bash wetlab/run_fivefold.sh
 ```
 
 The output directory contains one folder per fold and

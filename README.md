@@ -56,7 +56,7 @@ Running the full 13.5B-parameter model end-to-end for every candidate combinatio
 
 This design avoids repeatedly re-encoding the same structured text and protein modalities for every pairwise combination. Only the 14,847,361-parameter fusion module is instantiated for downstream inference; the three base encoders are not loaded. As a result, inference and laboratory-specific adaptation can run on a personal computer, and the overall workflow is substantially faster.
 
-During laboratory-specific adaptation in `adaption_screen/train.py`, only the **280,961-parameter classifier head** is trainable; the remaining **14,566,400** fusion parameters are frozen.
+During laboratory-specific adaptation in `wetlab/train.py`, only the **280,961-parameter classifier head** is trainable; the remaining **14,566,400** fusion parameters are frozen.
 
 ---
 
@@ -84,7 +84,7 @@ MuNaP/
 ├── text_embedding_4_explain/
 ├── model_explain/
 ├── finetuning/
-├── adaption_screen/
+├── wetlab/
 │   ├── data/
 │   ├── model.py
 │   ├── common.py
@@ -167,7 +167,7 @@ Contains adaptation experiments for unseen materials and proteins.
 
 For each target domain, the scripts split independent test and validation sets, train models with increasing fractions of the remaining target-domain data, and compare training from scratch with MuNaP adaptation, in which the pretrained representation and fusion modules are retained and only the prediction head is optimized.
 
-### `adaption_screen/`
+### `wetlab/`
 
 Contains the post-preprocessing workflow for laboratory-specific MuNaP adaptation and virtual screening of plasma nano-enrichment schemes.
 
@@ -179,7 +179,7 @@ Contains the post-preprocessing workflow for laboratory-specific MuNaP adaptatio
 - `aggregate.py`: equal-weight aggregation of within-cohort scheme rank percentiles across fold models.
 - `run_fivefold.sh`: end-to-end five-fold training, inference, and rank aggregation.
 
-See `adaption_screen/README.md` and `adaption_screen/data/README.md` for the required prepared inputs and commands.
+See `wetlab/README.md` and `wetlab/data/README.md` for the required prepared inputs and commands.
 
 ### `run_test.sh` and `run_roc_pr.sh`
 
