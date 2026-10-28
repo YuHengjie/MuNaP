@@ -39,7 +39,10 @@ x_index
 - Repeated rows for the same `ID`, `dose`, and `Accession` are collapsed by
   averaging `RPA`; the first `x_index` is retained. Duplicate rows belonging
   to the same scheme must therefore use the same text index.
-- Additional columns are ignored by the loader.
+- Splitting preserves every source column. The reference files retain
+  `Protein corona composition` as well as `x_index`; such fields remain
+  available for provenance and downstream reuse even though the current model
+  loader does not consume them.
 
 ### `calibration_raw.csv`
 
@@ -84,8 +87,10 @@ RPA
   label of one.
 - Every candidate scheme-protein pair must be present.
 - Extra or missing schemes cause inference to stop with an error.
-- Extra columns such as `RPA_raw_mean`, `weight`, and `x_index` are currently
-  ignored by the training and inference code.
+- Filtering to the 36 candidates preserves every source QC column, including
+  `RPA_raw_mean`, `weight`, and `x_index`. The current inference code uses
+  `ID`, `dose`, `Accession`, and `RPA`, while the other fields remain available
+  for audit and downstream analysis.
 
 The reference QC file contains 160,992 rows covering exactly 36 candidate
 schemes and 4,472 protein accessions.
